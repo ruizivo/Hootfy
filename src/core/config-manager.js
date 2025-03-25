@@ -57,7 +57,11 @@ class ConfigManager {
       .filter(url => url.active !== false)
       .map(url => ({
         ...url,
-        webhook: url.webhook || this.config.webhook_global
+        webhook: url.webhook || this.config.webhook_global,
+        remove_elements: [
+          ...(this.config.remove_elements_global || []),
+          ...(url.remove_elements || [])
+        ]
       }));
   }
 }

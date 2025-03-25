@@ -34,6 +34,26 @@ class FileStorage {
       fs.unlinkSync(filePath);
     }
   }
+
+  async getAllKeys() {
+    try {
+      // Lê todos os arquivos no diretório base
+      const files = fs.readdirSync(this.basePath);
+      
+      // Filtra apenas arquivos .json e converte os nomes de volta para URLs
+      return files
+        .filter(file => file.endsWith('.json'))
+        .map(file => {
+          // Remove a extensão .json e restaura o protocolo http/https
+          const key = file.replace('.json', '');
+          // Verifica se a URL começa com www. para adicionar o protocolo apropriado
+          return key.startsWith('www.') ? `https://${key}` : key;
+        });
+    } catch (error) {
+      console.error('Erro ao listar chaves:', error);
+      return [];
+    }
+  }
 }
 
 

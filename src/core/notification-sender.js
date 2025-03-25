@@ -5,7 +5,7 @@ class NotificationSender {
     this.globalWebhook = globalWebhook;
   }
 
-  async send(url, changes, specificWebhook = null) {
+  async send(url, data, specificWebhook = null) {
     const webhookUrl = specificWebhook || this.globalWebhook;
 
     if (!webhookUrl) {
@@ -17,7 +17,8 @@ class NotificationSender {
       const payload = {
         url,
         timestamp: new Date().toISOString(),
-        changes
+        changes: data.changes,
+        reportUrl: data.reportUrl
       };
 
       const response = await axios.post(webhookUrl, payload);

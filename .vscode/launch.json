@@ -20,10 +20,16 @@
         },
         {
             "command": "node src/utils/html-cleaner.js",
-            "name": "extractHierarchicalText",
+            "name": "html-cleaner",
             "request": "launch",
             "type": "node-terminal",
             "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "command": "node src/utils/test.js",
+            "name": "test",
+            "request": "launch",
+            "type": "node-terminal",
         }
 
     ]

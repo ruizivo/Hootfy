@@ -37,6 +37,10 @@ class StorageAdapter {
   async delete(key) {
     return this.storage.delete(key);
   }
+
+  async getAllKeys() {
+    return this.storage.getAllKeys();
+  }
 }
 
 module.exports = StorageAdapter;

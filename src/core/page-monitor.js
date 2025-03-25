@@ -1,46 +1,130 @@
-const axios = require('axios');
+const puppeteer = require('puppeteer');
+const sharp = require('sharp');
 const HTMLCleaner = require('../utils/html-cleaner');
 const DiffGenerator = require('../utils/diff-generator');
 const StorageAdapter = require('../storage/storage-adapter');
 const NotificationSender = require('./notification-sender');
+const ReportGenerator = require('../utils/report-generator');
 
 class PageMonitor {
   constructor(config, notificationSender, storageAdapter) {
     this.config = config;
     this.notificationSender = notificationSender;
     this.storageAdapter = storageAdapter;
+    this.browser = null;
+  }
+
+  async init() {
+    this.browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+  }
+
+  async close() {
+    if (this.browser) {
+      await this.browser.close();
+    }
+  }
+
+  async compressScreenshot(buffer) {
+    try {
+      // Redimensiona para largura máxima de 1920px mantendo proporção
+      // Comprime para JPEG com qualidade 80%
+      const compressed = await sharp(buffer)
+        .resize(1920, null, { 
+          withoutEnlargement: true,
+          fit: 'inside'
+        })
+        .jpeg({ 
+          quality: 80,
+          progressive: true
+        })
+        .toBuffer();
+
+      return compressed.toString('base64');
+    } catch (error) {
+      console.error('Erro ao comprimir screenshot:', error);
+      return buffer.toString('base64');
+    }
   }
 
   async checkUrl(urlConfig) {
     try {
-      const response = await axios.get(urlConfig.url);
+      if (!this.browser) {
+        await this.init();
+      }
+
+      const page = await this.browser.newPage();
+      
+      // Configurar viewport para um tamanho padrão
+      await page.setViewport({ width: 1920, height: 1080 });
+      
+      // Navegar para a URL
+      await page.goto(urlConfig.url, {
+        waitUntil: 'networkidle0',
+        timeout: 30000
+      });
+
+      // Capturar screenshot
+      const screenshotBuffer = await page.screenshot({
+        fullPage: true,
+        type: 'jpeg', // Usar JPEG em vez de PNG para menor tamanho
+        quality: 80
+      });
+      
+      // Comprimir e converter para base64
+      const screenshot = await this.compressScreenshot(screenshotBuffer);
+
+      // Obter o HTML da página
+      const html = await page.content();
       const cleanedHtml = HTMLCleaner.clean(
-        response.data, 
+        html,
         [...(this.config.remove_elements_global || []), ...(urlConfig.remove_elements || [])]
       );
       const textContent = HTMLCleaner.extractText(cleanedHtml);
 
       const storedContent = await this.storageAdapter.get(urlConfig.url);
+      const storedScreenshot = await this.storageAdapter.get(`${urlConfig.url}_screenshot`);
 
       if (!storedContent) {
         await this.storageAdapter.set(urlConfig.url, textContent);
+        await this.storageAdapter.set(`${urlConfig.url}_screenshot`, screenshot);
+        await page.close();
         return null;
       }
 
       const changes = DiffGenerator.generateDiff(storedContent, textContent);
 
       if (changes.length > 0) {
+        // Gerar e salvar relatório HTML
+        const report = await ReportGenerator.generateReport(
+          urlConfig.url,
+          changes,
+          storedContent,
+          textContent,
+          storedScreenshot,
+          screenshot
+        );
+        const reportPath = await ReportGenerator.saveReport(report);
+
+        // Enviar notificação com link para o relatório
         const formattedChanges = DiffGenerator.formatChangesForWebhook(changes);
-        
         await this.notificationSender.send(
-          urlConfig.url, 
-          formattedChanges, 
+          urlConfig.url,
+          {
+            changes: formattedChanges,
+            reportUrl: `file://${reportPath.replace(/\\/g, '/')}`
+          },
           urlConfig.webhook
         );
 
+        // Atualizar conteúdo armazenado
         await this.storageAdapter.set(urlConfig.url, textContent);
+        await this.storageAdapter.set(`${urlConfig.url}_screenshot`, screenshot);
       }
 
+      await page.close();
       return changes;
     } catch (error) {
       console.error(`Erro ao verificar URL ${urlConfig.url}:`, error.message);
