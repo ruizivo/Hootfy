@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Configuração de Scheduler</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-6">
+    <div class="container mx-auto">
+        <h1 class="text-2xl font-bold mb-6">Configuração do Scheduler</h1>
+        
+        <div class="bg-white p-6 rounded shadow-md">
+            <form id="schedulerForm" class="space-y-4">
+                <div>
+                    <label class="block mb-2">Expressão Cron:</label>
+                    <input 
+                        type="text" 
+                        id="cronExpression" 
+                        class="w-full p-2 border rounded"
+                        placeholder="*/30 * * * *"
+                    >
+                    <small class="text-gray-500">
+                        Formato: minuto hora dia-do-mês mês dia-da-semana
+                    </small>
+                </div>
+
+                <div>
+                    <label class="block mb-2">Próximas 5 Execuções:</label>
+                    <ul id="nextExecutions" class="list-disc list-inside">
+                        <!-- Execuções serão preenchidas via JavaScript -->
+                    </ul>
+                </div>
+
+                <div class="flex space-x-4">
+                    <button 
+                        type="button" 
+                        id="saveBtn"
+                        class="bg-blue-500 text-white px-4 py-2 rounded"
+                    >
+                        Salvar Configuração
+                    </button>
+                    <button 
+                        type="button" 
+                        id="testBtn"
+                        class="bg-green-500 text-white px-4 py-2 rounded"
+                    >
+                        Testar Expressão
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        
+        const baseUrl='http://localhost:3000'
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const cronInput = document.getElementById('cronExpression');
+            const nextExecutionsList = document.getElementById('nextExecutions');
+            const saveBtn = document.getElementById('saveBtn');
+            const testBtn = document.getElementById('testBtn');
+
+            async function calculateNextExecutions(cron) {
+                try {
+                    const response = await fetch(baseUrl + '/api/cron/predict', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ cron })
+                    });
+                    const nextExecutions = await response.json();
+                    
+                    nextExecutionsList.innerHTML = nextExecutions.map(
+                        exec => `<li>${new Date(exec).toLocaleString()}</li>`
+                    ).join('');
+                } catch (error) {
+                    console.error('Erro ao calcular próximas execuções:', error);
+                }
+            }
+
+            testBtn.addEventListener('click', () => {
+                calculateNextExecutions(cronInput.value);
+            });
+
+            saveBtn.addEventListener('click', async () => {
+                try {
+                    const response = await fetch(baseUrl + '/api/scheduler/config', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            schedule: cronInput.value 
+                        })
+                    });
+                    const result = await response.json();
+                    alert(result.message);
+                } catch (error) {
+                    console.error('Erro ao salvar configuração:', error);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

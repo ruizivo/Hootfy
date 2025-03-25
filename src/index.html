@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Web Page Monitor</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-6">
+        <h1 class="text-3xl font-bold mb-6">Web Page Monitor</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4">URLs Monitoradas</h2>
+                <ul id="urlList" class="space-y-2">
+                    <!-- URLs serão carregadas dinamicamente via JavaScript -->
+                </ul>
+                <button id="addUrlBtn" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded">
+                    Adicionar URL
+                </button>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4">Histórico de Monitoramento</h2>
+                <table id="monitorHistory" class="w-full">
+                    <thead>
+                        <tr>
+                            <th>URL</th>
+                            <th>Data</th>
+                            <th>Mudanças</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Histórico será carregado dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const baseUrl='http://localhost:3000'
+        // Implementação básica de frontend
+        async function loadUrls() {
+            const response = await fetch(baseUrl + '/api/config');
+            const config = await response.json();
+            const urlList = document.getElementById('urlList');
+            urlList.innerHTML = config.urls.map(url => 
+                `<li>${url.url} 
+                    <span class="text-${url.active ? 'green' : 'red'}-500">
+                        (${url.active ? 'Ativo' : 'Inativo'})
+                    </span>
+                </li>`
+            ).join('');
+        }
+
+        async function loadHistory() {
+            const response = await fetch(baseUrl + '/api/history');
+            const history = await response.json();
+            const historyTable = document.getElementById('monitorHistory');
+            // Implementação do preenchimento da tabela
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUrls();
+            loadHistory();
+        });
+    </script>
+</body>
+</html>

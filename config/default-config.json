@@ -1,0 +1,13 @@
+{
+    "webhook_global": "http://192.168.8.20:5678/webhook-test/f382dfa4-dba8-4ef5-8461-dd54815c4979",
+    "remove_elements_global": [],
+    "storage_type": "file",
+    "urls": [
+      {
+        "url": "https://news.ycombinator.com",
+        "active": true,
+        "webhook": null,
+        "remove_elements": ["head",".top-ad", "#cookie-consent"]
+      }
+    ]
+  }

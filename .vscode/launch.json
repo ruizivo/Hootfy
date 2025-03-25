@@ -1,0 +1,30 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "command": "npm run cli",
+            "name": "cli",
+            "request": "launch",
+            "type": "node-terminal",
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "command": "npm run web",
+            "name": "web",
+            "request": "launch",
+            "type": "node-terminal",
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "command": "node src/utils/html-cleaner.js",
+            "name": "extractHierarchicalText",
+            "request": "launch",
+            "type": "node-terminal",
+            "envFile": "${workspaceFolder}/.env",
+        }
+
+    ]
+}
