@@ -2,6 +2,16 @@ const fs = require('fs').promises;
 const path = require('path');
 
 class ReportGenerator {
+  static escapeHtml(text) {
+    if (!text) return '';
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   static async generateReport(url, changes, oldContent, newContent, oldScreenshot, newScreenshot) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const reportName = `changes-${timestamp}.html`;
@@ -16,8 +26,8 @@ class ReportGenerator {
     let currentLineNumber = 1;
 
     while (oldIndex < oldLines.length || newIndex < newLines.length) {
-      const oldLine = oldLines[oldIndex];
-      const newLine = newLines[newIndex];
+      const oldLine = oldIndex < oldLines.length ? oldLines[oldIndex] : null;
+      const newLine = newIndex < newLines.length ? newLines[newIndex] : null;
       
       // Procurar se a linha atual foi removida ou adicionada
       const isRemoved = changes.find(c => c.type === 'removed' && c.content === oldLine);
@@ -26,14 +36,14 @@ class ReportGenerator {
       if (isRemoved) {
         allChanges.push({ 
           type: 'removed', 
-          content: oldLine,
+          content: this.escapeHtml(oldLine),
           lineNumber: currentLineNumber 
         });
         oldIndex++;
       } else if (isAdded) {
         allChanges.push({ 
           type: 'added', 
-          content: newLine,
+          content: this.escapeHtml(newLine),
           lineNumber: currentLineNumber 
         });
         newIndex++;
@@ -41,7 +51,7 @@ class ReportGenerator {
       } else if (oldLine === newLine) {
         allChanges.push({ 
           type: 'unchanged', 
-          content: newLine,
+          content: this.escapeHtml(newLine),
           lineNumber: currentLineNumber 
         });
         oldIndex++;
@@ -49,14 +59,14 @@ class ReportGenerator {
         currentLineNumber++;
       } else {
         // Se chegamos aqui, pode ser uma linha modificada (remoção seguida de adição)
-        const nextOldLine = oldLines[oldIndex + 1];
-        const nextNewLine = newLines[newIndex + 1];
+        const nextOldLine = oldIndex + 1 < oldLines.length ? oldLines[oldIndex + 1] : null;
+        const nextNewLine = newIndex + 1 < newLines.length ? newLines[newIndex + 1] : null;
         
         if (nextOldLine === newLine) {
           // A linha atual foi removida
           allChanges.push({ 
             type: 'removed', 
-            content: oldLine,
+            content: this.escapeHtml(oldLine),
             lineNumber: currentLineNumber 
           });
           oldIndex++;
@@ -64,30 +74,51 @@ class ReportGenerator {
           // A linha atual foi adicionada
           allChanges.push({ 
             type: 'added', 
-            content: newLine,
+            content: this.escapeHtml(newLine),
             lineNumber: currentLineNumber 
           });
           newIndex++;
           currentLineNumber++;
         } else {
-          // Avançar ambos os índices
-          if (oldLine) {
-            allChanges.push({ 
-              type: 'removed', 
-              content: oldLine,
-              lineNumber: currentLineNumber 
-            });
-            oldIndex++;
-          }
-          if (newLine) {
+          // Se oldLine é null, significa que já processamos todas as linhas antigas
+          // Nesse caso, todas as linhas restantes em newLines são adições
+          if (oldLine === null) {
             allChanges.push({ 
               type: 'added', 
-              content: newLine,
+              content: this.escapeHtml(newLine),
               lineNumber: currentLineNumber 
             });
             newIndex++;
             currentLineNumber++;
+            continue;
           }
+          
+          // Se newLine é null, significa que já processamos todas as linhas novas
+          // Nesse caso, todas as linhas restantes em oldLines são remoções
+          if (newLine === null) {
+            allChanges.push({ 
+              type: 'removed', 
+              content: this.escapeHtml(oldLine),
+              lineNumber: currentLineNumber 
+            });
+            oldIndex++;
+            continue;
+          }
+
+          // Se chegamos aqui, temos uma modificação
+          allChanges.push({ 
+            type: 'removed', 
+            content: this.escapeHtml(oldLine),
+            lineNumber: currentLineNumber 
+          });
+          allChanges.push({ 
+            type: 'added', 
+            content: this.escapeHtml(newLine),
+            lineNumber: currentLineNumber 
+          });
+          oldIndex++;
+          newIndex++;
+          currentLineNumber++;
         }
       }
     }
@@ -99,9 +130,11 @@ class ReportGenerator {
     <meta charset="UTF-8">
     <title>Relatório de Mudanças - ${url}</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    ${(oldScreenshot && newScreenshot) ? `
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@5.3.8/dist/photoswipe.css">
     <script src="https://cdn.jsdelivr.net/npm/photoswipe@5.3.8/dist/umd/photoswipe.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/photoswipe@5.3.8/dist/umd/photoswipe-lightbox.umd.min.js"></script>
+    ` : ''}
     <style>
         .line {
             display: flex;
@@ -110,9 +143,9 @@ class ReportGenerator {
             font-family: monospace;
             white-space: pre;
         }
-        .line:hover {
-            background-color: rgba(0, 0, 0, 0.05);
-        }
+        // .line:hover {
+        //     background-color: rgba(0, 0, 0, 0.05);
+        // }
         .line-number {
             color: #666;
             padding-right: 1rem;
@@ -123,16 +156,17 @@ class ReportGenerator {
         .line-content {
             tab-size: 4;
         }
+        ${(oldScreenshot && newScreenshot) ? `
         .screenshot-container {
             position: relative;
             width: 100%;
-            max-width: 320px; /* Limitando a largura máxima */
-            height: 180px; /* Altura proporcional para manter aspecto 16:9 */
+            max-width: 320px;
+            height: 180px;
             overflow: hidden;
             border-radius: 0.375rem;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
             cursor: zoom-in;
-            margin: 0 auto; /* Centralizar horizontalmente */
+            margin: 0 auto;
         }
         .screenshot-container:hover {
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -149,13 +183,13 @@ class ReportGenerator {
         .pswp__img {
             object-fit: contain;
         }
-        /* Remover animação de fade do PhotoSwipe */
         .pswp.pswp--open {
             display: block;
         }
         .pswp__img--placeholder {
             display: none !important;
         }
+        ` : ''}
     </style>
 </head>
 <body class="bg-gray-100 p-6">
@@ -219,6 +253,7 @@ class ReportGenerator {
         </div>
     </div>
 
+    ${(oldScreenshot && newScreenshot) ? `
     <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="pswp__bg"></div>
         <div class="pswp__scroll-wrap">
@@ -262,32 +297,31 @@ class ReportGenerator {
             pswpModule: PhotoSwipe,
             padding: { top: 20, bottom: 20, left: 20, right: 20 },
             bgOpacity: 0.9,
-            showHideAnimationType: 'none', // Remove animação de fade
-            showAnimationDuration: 0, // Remove duração da animação
-            hideAnimationDuration: 0, // Remove duração da animação
+            showHideAnimationType: 'none',
+            showAnimationDuration: 0,
+            hideAnimationDuration: 0,
             zoom: {
                 click: true,
                 doubleClick: true,
                 mouseWheel: true,
                 pinch: true
             },
-            initialZoomLevel: 'fit', // Ajusta a imagem para caber na tela
-            secondaryZoomLevel: 1.5, // Zoom ao dar duplo clique
-            maxZoomLevel: 4, // Zoom máximo
-            imageClickAction: 'zoom', // Clique simples já dá zoom
-            tapAction: 'zoom', // Toque simples já dá zoom (mobile)
-            preloaderDelay: 0 // Remove delay do preloader
+            initialZoomLevel: 'fit',
+            secondaryZoomLevel: 1.5,
+            maxZoomLevel: 4,
+            imageClickAction: 'zoom',
+            tapAction: 'zoom',
+            preloaderDelay: 0
         });
 
-        // Evento disparado antes de abrir o PhotoSwipe
         lightbox.on('beforeOpen', () => {
-            // Remove classes que podem causar problemas de layout
             document.documentElement.classList.remove('pswp-open');
             document.body.classList.remove('pswp-open');
         });
 
         lightbox.init();
     </script>
+    ` : ''}
 </body>
 </html>`;
 

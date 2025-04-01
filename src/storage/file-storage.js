@@ -10,7 +10,7 @@ class FileStorage {
   }
 
   getFilePath(key) {
-    return path.join(this.basePath, `${key.replace("https://","").replace("http://","")}.json`);
+    return path.join(this.basePath, `${key.replace("https://","").replace("http://","").replaceAll("/","-")}.json`);
   }
 
   get(key) {

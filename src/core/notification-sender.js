@@ -1,12 +1,11 @@
 const axios = require('axios');
 
 class NotificationSender {
-  constructor(globalWebhook = null) {
-    this.globalWebhook = globalWebhook;
+  constructor() {
   }
 
-  async send(url, data, specificWebhook = null) {
-    const webhookUrl = specificWebhook || this.globalWebhook;
+  async send(url, data, specificWebhook) {
+    const webhookUrl = specificWebhook;
 
     if (!webhookUrl) {
       console.log('Nenhum webhook configurado');

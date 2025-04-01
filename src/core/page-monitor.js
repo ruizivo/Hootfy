@@ -66,30 +66,31 @@ class PageMonitor {
         timeout: 30000
       });
 
-      // Capturar screenshot
-      const screenshotBuffer = await page.screenshot({
-        fullPage: true,
-        type: 'jpeg', // Usar JPEG em vez de PNG para menor tamanho
-        quality: 80
-      });
+      let screenshot = null;
+      // Capturar screenshot apenas se estiver habilitado
+      if (urlConfig.enable_screenshot !== false) {
+        const screenshotBuffer = await page.screenshot({
+          fullPage: true,
+          type: 'jpeg',
+          quality: 80
+        });
+        screenshot = await this.compressScreenshot(screenshotBuffer);
+      }
       
-      // Comprimir e converter para base64
-      const screenshot = await this.compressScreenshot(screenshotBuffer);
-
       // Obter o HTML da página
       const html = await page.content();
-      const cleanedHtml = HTMLCleaner.clean(
-        html,
-        [...(this.config.remove_elements_global || []), ...(urlConfig.remove_elements || [])]
-      );
+      const cleanedHtml = HTMLCleaner.clean(html, urlConfig.remove_elements, urlConfig.include_elements);
       const textContent = HTMLCleaner.extractText(cleanedHtml);
 
       const storedContent = await this.storageAdapter.get(urlConfig.url);
-      const storedScreenshot = await this.storageAdapter.get(`${urlConfig.url}_screenshot`);
+      const storedScreenshot = urlConfig.enable_screenshot !== false ? 
+        await this.storageAdapter.get(`${urlConfig.url}_screenshot`) : null;
 
       if (!storedContent) {
         await this.storageAdapter.set(urlConfig.url, textContent);
-        await this.storageAdapter.set(`${urlConfig.url}_screenshot`, screenshot);
+        if (screenshot) {
+          await this.storageAdapter.set(`${urlConfig.url}_screenshot`, screenshot);
+        }
         await page.close();
         return null;
       }
@@ -121,7 +122,9 @@ class PageMonitor {
 
         // Atualizar conteúdo armazenado
         await this.storageAdapter.set(urlConfig.url, textContent);
-        await this.storageAdapter.set(`${urlConfig.url}_screenshot`, screenshot);
+        if (screenshot) {
+          await this.storageAdapter.set(`${urlConfig.url}_screenshot`, screenshot);
+        }
       }
 
       await page.close();

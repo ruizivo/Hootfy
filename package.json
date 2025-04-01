@@ -1,5 +1,5 @@
 {
-    "name": "Hootify",
+    "name": "Hootfy",
     "version": "1.0.0",
     "description": "Monitoramento de mudanças em páginas web",
     "main": "src/index.js",
@@ -8,18 +8,19 @@
         "cli": "node src/cli/menu.js",
         "web": "node src/web/server.js",
         "lambda": "node src/lambda/lambda-handler.js",
-        "docker-build": "docker build -t Hootify .",
+        "docker-build": "docker build -t Hootfy .",
         "docker-run": "docker-compose up",
         "test": "jest",
         "dev": "nodemon src/index.js"
     },
     "dependencies": {
+        "aws-sdk": "^2.1692.0",
         "axios": "^1.6.0",
-        "cheerio": "^1.0.0-rc.12",
         "cors": "^2.8.5",
         "diff": "^5.1.0",
         "dotenv": "^16.3.1",
         "express": "^4.18.2",
+        "html-to-text": "^9.0.5",
         "jsdom": "^26.0.0",
         "pg": "^8.11.3",
         "puppeteer": "^24.4.0",

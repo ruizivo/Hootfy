@@ -1,7 +1,7 @@
-const ConfigManager = require('../core/config-manager');
-const PageMonitor = require('../core/page-monitor');
-const StorageAdapter = require('../storage/storage-adapter');
-const NotificationSender = require('../core/notification-sender');
+const ConfigManager = require('../src/core/config-manager');
+const PageMonitor = require('../src/core/page-monitor');
+const StorageAdapter = require('../src/storage/storage-adapter');
+const NotificationSender = require('../src/core/notification-sender');
 
 exports.handler = async (event, context) => {
   try {
@@ -16,6 +16,8 @@ exports.handler = async (event, context) => {
     );
 
     const results = await pageMonitor.checkAllUrls();
+    
+    console.error('result:', results);
 
     return {
       statusCode: 200,

@@ -1,26 +1,29 @@
-
-const FileStorage = require('../storage/file-storage');
-const SqliteStorage = require('../storage/sqlite-storage');
-const PostgresStorage = require('../storage/postgres-storage');
-
+const FileStorage = require('./file-storage');
+const SqliteStorage = require('./sqlite-storage');
+const PostgresStorage = require('./postgres-storage');
+const S3Storage = require('./s3-storage');
 
 class StorageAdapter {
-  constructor(type = 'file', options = {}) {
-    this.type = type;
-    this.options = options;
+  constructor(config) {
+    this.config = config;
     this.storage = this.createStorage();
   }
 
   createStorage() {
-    switch (this.type) {
+    const storageType = this.config.storage_type || 'file';
+    const storageConfig = this.config.storage_config[storageType];
+
+    switch (storageType) {
       case 'file':
-        return new FileStorage(this.options.path || './data');
+        return new FileStorage(storageConfig.path || './data');
       case 'sqlite_local':
-        return new SqliteStorage(this.options.path || './database.sqlite');
+        return new SqliteStorage(storageConfig.path || './database.sqlite');
       case 'sqlite_external':
-        return new SqliteStorage(this.options.externalPath);
+        return new SqliteStorage(storageConfig.externalPath);
       case 'postgres':
-        return new PostgresStorage(this.options);
+        return new PostgresStorage(storageConfig);
+      case 's3':
+        return new S3Storage(storageConfig);
       default:
         return new FileStorage('./data');
     }

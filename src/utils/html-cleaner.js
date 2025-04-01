@@ -1,44 +1,41 @@
 const { JSDOM } = require("jsdom");
 
 class HTMLCleaner {
-  static clean(html, elementsToRemove = []) {
+  static clean(html, removeElements = [], includeElements = []) {
     const dom = new JSDOM(html);
     const document = dom.window.document;
 
-    elementsToRemove.forEach(tag => {
-      document.querySelectorAll(tag).forEach(element => {
-        element.remove();
+    // Se tiver include_elements, só mantém esses elementos
+    if (includeElements && includeElements.length > 0) {
+      // Cria um novo documento apenas com os elementos incluídos
+      const newDocument = new JSDOM('<html><body></body></html>').window.document;
+      
+      // Para cada seletor de inclusão
+      includeElements.forEach(selector => {
+        document.querySelectorAll(selector).forEach(element => {
+          // Clona o elemento e seus filhos para o novo documento
+          newDocument.body.appendChild(element.cloneNode(true));
+        });
       });
-    });
+
+      return newDocument.documentElement.outerHTML;
+    }
+
+    // Se não tiver include_elements, remove os elementos especificados
+    if (removeElements && removeElements.length > 0) {
+      removeElements.forEach(tag => {
+        document.querySelectorAll(tag).forEach(element => {
+          element.remove();
+        });
+      });
+    }
 
     return document.documentElement.outerHTML;
   }
 
-
-  static getIndentedText(node, depth = 0) {
-    let text = "";
-
-    node.childNodes.forEach(child => {
-        if (child.nodeType === 3) { // Nó de texto
-            const trimmed = child.textContent.replace(/\s+/g, " ").trim();
-            if (trimmed) {
-                text += "  ".repeat(depth) + trimmed + "\n";
-            }
-        } else if (child.nodeType === 1) { // Nó de elemento
-            text += this.getIndentedText(child, depth + 1);
-        }
-    });
-
-    return text;
-  }
-
   static extractText(html) {
-    const dom = new JSDOM(html);
-    const body = dom.window.document.body;
-    
-    const indentedText = HTMLCleaner.getIndentedText(body);
-
-    return indentedText
+    const text = JSDOM.fragment(html).textContent;
+    return text;
   }
 }
 

@@ -11,8 +11,8 @@ class CLIMenu {
       output: process.stdout
     });
     this.configManager = new ConfigManager();
-    this.storageAdapter = new StorageAdapter(process.env.DB_TYPE || 'file');
-    this.notificationSender = new NotificationSender(process.env.GLOBAL_WEBHOOK_URL);
+    this.storageAdapter = new StorageAdapter(this.configManager.getConfig());
+    this.notificationSender = new NotificationSender();
     this.pageMonitor = new PageMonitor(
       this.configManager, 
       this.notificationSender, 
@@ -94,9 +94,9 @@ class CLIMenu {
     } else {
       results.forEach(result => {
         console.log(`Mudanças na URL: ${result.url}`);
-        result.changes.forEach(change => {
-          console.log(` - ${change.type}: ${change.content}`);
-        });
+        // result.changes.forEach(change => {
+        //   console.log(` - ${change.type}: ${change.content}`);
+        // });
       });
     }
   }

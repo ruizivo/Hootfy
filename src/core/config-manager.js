@@ -25,6 +25,10 @@ class ConfigManager {
     };
   }
 
+  getConfig(){
+    return this.config;
+  }
+
   saveConfig(config) {
     try {
       fs.writeFileSync(this.configPath, JSON.stringify(config, null, 2));
@@ -53,6 +57,8 @@ class ConfigManager {
   }
 
   getActiveUrls() {
+    this.config = this.loadConfig();
+
     return this.config.urls
       .filter(url => url.active !== false)
       .map(url => ({
