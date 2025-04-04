@@ -2,23 +2,25 @@ const puppeteer = require('puppeteer');
 const sharp = require('sharp');
 const HTMLCleaner = require('../utils/html-cleaner');
 const DiffGenerator = require('../utils/diff-generator');
-const StorageAdapter = require('../storage/storage-adapter');
-const NotificationSender = require('./notification-sender');
 const ReportGenerator = require('../utils/report-generator');
+const path = require('path');
+const fs = require('fs').promises;
 
 class PageMonitor {
-  constructor(config, notificationSender, storageAdapter) {
-    this.config = config;
+  constructor(configManager, notificationSender, storageAdapter, browser = null) {
+    this.configManager = configManager;
     this.notificationSender = notificationSender;
     this.storageAdapter = storageAdapter;
-    this.browser = null;
+    this.browser = browser;
   }
 
   async init() {
-    this.browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    if(!this.browser){
+      this.browser = await puppeteer.launch({
+        headless: 'new',
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
+    }
   }
 
   async close() {
@@ -49,11 +51,45 @@ class PageMonitor {
     }
   }
 
+  getStoragePath(key, type) {
+    const config = this.configManager.getConfig();
+    const basePath = config.storage_config[config.storage_type].path;
+    const folder = type === 'screenshot' ? 'screenshots' : 
+                  type === 'report' ? 'reports' : 'content';
+    
+    if (config.storage_type === 'file') {
+      return path.join(basePath, folder, key);
+    } else {
+      return `${basePath}/${folder}/${key}`;
+    }
+  }
+
+  async saveReport(report) {
+    try {
+      const config = this.configManager.getConfig();
+      const reportPath = this.getStoragePath(report.name, 'report');
+
+      // Criar diretórios necessários se for storage local
+      if (config.storage_type === 'file') {
+        const dir = path.dirname(reportPath);
+        await fs.mkdir(dir, { recursive: true });
+      }
+
+      // Salvar o relatório usando o storage adapter
+      await this.storageAdapter.set(reportPath, report.content, 'text/html');
+
+      return reportPath;
+    } catch (error) {
+      console.error('Erro ao salvar relatório:', error);
+      throw error;
+    }
+  }
+
   async checkUrl(urlConfig) {
     try {
-      if (!this.browser) {
-        await this.init();
-      }
+      
+      await this.init();
+      
 
       const page = await this.browser.newPage();
       
@@ -82,14 +118,17 @@ class PageMonitor {
       const cleanedHtml = HTMLCleaner.clean(html, urlConfig.remove_elements, urlConfig.include_elements);
       const textContent = HTMLCleaner.extractText(cleanedHtml);
 
-      const storedContent = await this.storageAdapter.get(urlConfig.url);
+      const contentKey = this.getStoragePath(urlConfig.name, 'content');
+      const screenshotKey = this.getStoragePath(urlConfig.name, 'screenshot');
+
+      const storedContent = await this.storageAdapter.get(contentKey);
       const storedScreenshot = urlConfig.enable_screenshot !== false ? 
-        await this.storageAdapter.get(`${urlConfig.url}_screenshot`) : null;
+        await this.storageAdapter.get(screenshotKey) : null;
 
       if (!storedContent) {
-        await this.storageAdapter.set(urlConfig.url, textContent);
+        await this.storageAdapter.set(contentKey, textContent);
         if (screenshot) {
-          await this.storageAdapter.set(`${urlConfig.url}_screenshot`, screenshot);
+          await this.storageAdapter.set(screenshotKey, screenshot);
         }
         await page.close();
         return null;
@@ -107,7 +146,7 @@ class PageMonitor {
           storedScreenshot,
           screenshot
         );
-        const reportPath = await ReportGenerator.saveReport(report);
+        const reportPath = await this.saveReport(report);
 
         // Enviar notificação com link para o relatório
         const formattedChanges = DiffGenerator.formatChangesForWebhook(changes);
@@ -121,9 +160,9 @@ class PageMonitor {
         );
 
         // Atualizar conteúdo armazenado
-        await this.storageAdapter.set(urlConfig.url, textContent);
+        await this.storageAdapter.set(contentKey, textContent);
         if (screenshot) {
-          await this.storageAdapter.set(`${urlConfig.url}_screenshot`, screenshot);
+          await this.storageAdapter.set(screenshotKey, screenshot);
         }
       }
 
@@ -136,7 +175,7 @@ class PageMonitor {
   }
 
   async checkAllUrls() {
-    const activeUrls = this.config.getActiveUrls();
+    const activeUrls = this.configManager.getActiveUrls();
     const results = [];
 
     for (const urlConfig of activeUrls) {

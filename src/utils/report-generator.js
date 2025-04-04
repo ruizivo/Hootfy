@@ -25,11 +25,24 @@ class ReportGenerator {
     let newIndex = 0;
     let currentLineNumber = 1;
 
-    while (oldIndex < oldLines.length || newIndex < newLines.length) {
-      const oldLine = oldIndex < oldLines.length ? oldLines[oldIndex] : null;
-      const newLine = newIndex < newLines.length ? newLines[newIndex] : null;
+    // Primeiro, vamos processar todas as linhas que não mudaram
+    while (oldIndex < oldLines.length && newIndex < newLines.length) {
+      const oldLine = oldLines[oldIndex];
+      const newLine = newLines[newIndex];
       
-      // Procurar se a linha atual foi removida ou adicionada
+      if (oldLine === newLine) {
+        allChanges.push({ 
+          type: 'unchanged', 
+          content: this.escapeHtml(newLine),
+          lineNumber: currentLineNumber 
+        });
+        oldIndex++;
+        newIndex++;
+        currentLineNumber++;
+        continue;
+      }
+
+      // Se as linhas são diferentes, vamos verificar se é uma remoção ou adição
       const isRemoved = changes.find(c => c.type === 'removed' && c.content === oldLine);
       const isAdded = changes.find(c => c.type === 'added' && c.content === newLine);
 
@@ -48,79 +61,43 @@ class ReportGenerator {
         });
         newIndex++;
         currentLineNumber++;
-      } else if (oldLine === newLine) {
+      } else {
+        // Se chegamos aqui, temos uma modificação
         allChanges.push({ 
-          type: 'unchanged', 
+          type: 'removed', 
+          content: this.escapeHtml(oldLine),
+          lineNumber: currentLineNumber 
+        });
+        allChanges.push({ 
+          type: 'added', 
           content: this.escapeHtml(newLine),
           lineNumber: currentLineNumber 
         });
         oldIndex++;
         newIndex++;
         currentLineNumber++;
-      } else {
-        // Se chegamos aqui, pode ser uma linha modificada (remoção seguida de adição)
-        const nextOldLine = oldIndex + 1 < oldLines.length ? oldLines[oldIndex + 1] : null;
-        const nextNewLine = newIndex + 1 < newLines.length ? newLines[newIndex + 1] : null;
-        
-        if (nextOldLine === newLine) {
-          // A linha atual foi removida
-          allChanges.push({ 
-            type: 'removed', 
-            content: this.escapeHtml(oldLine),
-            lineNumber: currentLineNumber 
-          });
-          oldIndex++;
-        } else if (oldLine === nextNewLine) {
-          // A linha atual foi adicionada
-          allChanges.push({ 
-            type: 'added', 
-            content: this.escapeHtml(newLine),
-            lineNumber: currentLineNumber 
-          });
-          newIndex++;
-          currentLineNumber++;
-        } else {
-          // Se oldLine é null, significa que já processamos todas as linhas antigas
-          // Nesse caso, todas as linhas restantes em newLines são adições
-          if (oldLine === null) {
-            allChanges.push({ 
-              type: 'added', 
-              content: this.escapeHtml(newLine),
-              lineNumber: currentLineNumber 
-            });
-            newIndex++;
-            currentLineNumber++;
-            continue;
-          }
-          
-          // Se newLine é null, significa que já processamos todas as linhas novas
-          // Nesse caso, todas as linhas restantes em oldLines são remoções
-          if (newLine === null) {
-            allChanges.push({ 
-              type: 'removed', 
-              content: this.escapeHtml(oldLine),
-              lineNumber: currentLineNumber 
-            });
-            oldIndex++;
-            continue;
-          }
-
-          // Se chegamos aqui, temos uma modificação
-          allChanges.push({ 
-            type: 'removed', 
-            content: this.escapeHtml(oldLine),
-            lineNumber: currentLineNumber 
-          });
-          allChanges.push({ 
-            type: 'added', 
-            content: this.escapeHtml(newLine),
-            lineNumber: currentLineNumber 
-          });
-          oldIndex++;
-          newIndex++;
-          currentLineNumber++;
-        }
       }
+    }
+
+    // Processar linhas restantes do arquivo antigo (remoções)
+    while (oldIndex < oldLines.length) {
+      allChanges.push({ 
+        type: 'removed', 
+        content: this.escapeHtml(oldLines[oldIndex]),
+        lineNumber: currentLineNumber 
+      });
+      oldIndex++;
+    }
+
+    // Processar linhas restantes do arquivo novo (adições)
+    while (newIndex < newLines.length) {
+      allChanges.push({ 
+        type: 'added', 
+        content: this.escapeHtml(newLines[newIndex]),
+        lineNumber: currentLineNumber 
+      });
+      newIndex++;
+      currentLineNumber++;
     }
 
     const htmlContent = `
@@ -329,18 +306,6 @@ class ReportGenerator {
       name: reportName,
       content: htmlContent
     };
-  }
-
-  static async saveReport(report, outputDir = 'reports') {
-    try {
-      await fs.mkdir(outputDir, { recursive: true });
-      const filePath = path.join(outputDir, report.name);
-      await fs.writeFile(filePath, report.content);
-      return filePath;
-    } catch (error) {
-      console.error('Erro ao salvar relatório:', error);
-      throw error;
-    }
   }
 }
 

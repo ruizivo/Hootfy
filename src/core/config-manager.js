@@ -67,7 +67,8 @@ class ConfigManager {
         remove_elements: [
           ...(this.config.remove_elements_global || []),
           ...(url.remove_elements || [])
-        ]
+        ],
+        name:url.url.replace("https://","").replace("http://","").replaceAll("/","-")
       }));
   }
 }

@@ -11,10 +11,12 @@
         "docker-build": "docker build -t Hootfy .",
         "docker-run": "docker-compose up",
         "test": "jest",
-        "dev": "nodemon src/index.js"
+        "dev": "nodemon src/index.js",
+        "deploy-serverless": "serverless deploy --stage dev -r us-east-1 --aws-profile serverless"
     },
     "dependencies": {
-        "aws-sdk": "^2.1692.0",
+        "@aws-sdk/client-s3": "^3.779.0",
+        "@aws-sdk/lib-storage": "^3.779.0",
         "axios": "^1.6.0",
         "cors": "^2.8.5",
         "diff": "^5.1.0",
@@ -24,12 +26,14 @@
         "jsdom": "^26.0.0",
         "pg": "^8.11.3",
         "puppeteer": "^24.4.0",
-        "sharp": "^0.33.5",
-        "sqlite3": "^5.1.7"
+        "sharp": "^0.33.5"
     },
     "devDependencies": {
         "jest": "^29.7.0",
         "nodemon": "^3.0.1",
         "supertest": "^6.3.3"
+    },
+    "optionalDependencies": {
+        "sqlite3": "^5.1.7"
     }
 }

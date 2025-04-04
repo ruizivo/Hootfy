@@ -1,5 +1,5 @@
 {
-    "webhook_global": "http://192.168.8.20:5678/webhook-test/f382dfa4-dba8-4ef5-8461-dd54815c4979",
+    "webhook_global": "https://n8n.hivecloud.com.br/webhook-test/133279a4-6c4d-4b4e-9e58-31121ab0b748",
     "remove_elements_global": ["head","style","iframe", "script", "noscript", "svg"],
     "storage_type": "s3",
     "storage_config": {
@@ -33,23 +33,14 @@
         "active": true,
         "webhook": null,
         "remove_elements": [".top-ad", "#cookie-consent"],
-        "include_elements": [".athing", ".votearrow", ".titleline"],
-        "enable_screenshot": false
-      },
-      {
-        "url": "https://g1.globo.com",
-        "active": false,
-        "webhook": null,
-        "remove_elements": ["#menu-container",".menu-container", "footer", ".footer"],
-        "include_elements": [".feed-post-body"],
-        "enable_screenshot": false
+        "include_elements": ["#hnmain > tbody > tr:nth-child(3) > td > table"],
+        "enable_screenshot": true
       },
       {
         "url": "https://dfe-portal.svrs.rs.gov.br/Mdfe/Avisos",
         "active": true,
         "webhook": null,
         "remove_elements": ["#menu-container",".menu-container", "footer", ".footer"],
-        "include_elements": [".content", ".main-content"],
         "enable_screenshot": false
       },
       {
@@ -57,8 +48,7 @@
         "active": true,
         "webhook": null,
         "remove_elements": ["#menu-container",".menu-container", "footer", ".footer"],
-        "include_elements": [".content", ".main-content"],
-        "enable_screenshot": true
+        "enable_screenshot": false
       }
     ]
   }

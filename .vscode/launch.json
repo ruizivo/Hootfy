@@ -30,6 +30,12 @@
             "name": "test",
             "request": "launch",
             "type": "node-terminal",
+        },
+        {
+            "command": "node lambda/lambda-handler.js",
+            "name": "lambda",
+            "request": "launch",
+            "type": "node-terminal",
         }
 
     ]

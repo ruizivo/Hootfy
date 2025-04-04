@@ -28,10 +28,12 @@ class DiffGenerator {
   }
 
   static formatChangesForWebhook(changes) {
-    return changes.map(change => ({
+    const changesFiltered = changes.map(change => ({
       before: change.type === 'removed' ? change.content : null,
       after: change.type === 'added' ? change.content : null
     })).filter(change => change.before || change.after);
+    
+    return changesFiltered
   }
 }
 
