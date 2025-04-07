@@ -42,37 +42,32 @@ class ReportGenerator {
         continue;
       }
 
-      // Se as linhas são diferentes, vamos verificar se é uma remoção ou adição
-      const isRemoved = changes.find(c => c.type === 'removed' && c.content === oldLine);
-      const isAdded = changes.find(c => c.type === 'added' && c.content === newLine);
+      // Verificar se a linha atual é parte de uma mudança
+      const change = changes.find(c => {
+        if (c.type === 'removed' && c.content === oldLine) return true;
+        if (c.type === 'added' && c.content === newLine) return true;
+        return false;
+      });
 
-      if (isRemoved) {
-        allChanges.push({ 
-          type: 'removed', 
-          content: this.escapeHtml(oldLine),
-          lineNumber: currentLineNumber 
-        });
-        oldIndex++;
-      } else if (isAdded) {
-        allChanges.push({ 
-          type: 'added', 
-          content: this.escapeHtml(newLine),
-          lineNumber: currentLineNumber 
-        });
-        newIndex++;
-        currentLineNumber++;
+      if (change) {
+        if (change.type === 'removed') {
+          allChanges.push({ 
+            type: 'removed', 
+            content: this.escapeHtml(oldLine),
+            lineNumber: currentLineNumber 
+          });
+          oldIndex++;
+        } else if (change.type === 'added') {
+          allChanges.push({ 
+            type: 'added', 
+            content: this.escapeHtml(newLine),
+            lineNumber: currentLineNumber 
+          });
+          newIndex++;
+          currentLineNumber++;
+        }
       } else {
-        // Se chegamos aqui, temos uma modificação
-        allChanges.push({ 
-          type: 'removed', 
-          content: this.escapeHtml(oldLine),
-          lineNumber: currentLineNumber 
-        });
-        allChanges.push({ 
-          type: 'added', 
-          content: this.escapeHtml(newLine),
-          lineNumber: currentLineNumber 
-        });
+        // Se não encontramos uma mudança correspondente, avançamos
         oldIndex++;
         newIndex++;
         currentLineNumber++;
@@ -120,9 +115,6 @@ class ReportGenerator {
             font-family: monospace;
             white-space: pre;
         }
-        // .line:hover {
-        //     background-color: rgba(0, 0, 0, 0.05);
-        // }
         .line-number {
             color: #666;
             padding-right: 1rem;

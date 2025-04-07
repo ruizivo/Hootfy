@@ -12,6 +12,7 @@ class PageMonitor {
     this.notificationSender = notificationSender;
     this.storageAdapter = storageAdapter;
     this.browser = browser;
+    this.page = null;
   }
 
   async init() {
@@ -88,33 +89,28 @@ class PageMonitor {
   async checkUrl(urlConfig) {
     try {
       
-      await this.init();
-      
-
-      const page = await this.browser.newPage();
-      
-      // Configurar viewport para um tamanho padrão
-      await page.setViewport({ width: 1920, height: 1080 });
-      
+      console.log('go to url: ',urlConfig.url )
       // Navegar para a URL
-      await page.goto(urlConfig.url, {
+      await this.page.goto(urlConfig.url, {
         waitUntil: 'networkidle0',
         timeout: 30000
       });
-
+      
       let screenshot = null;
       // Capturar screenshot apenas se estiver habilitado
       if (urlConfig.enable_screenshot !== false) {
-        const screenshotBuffer = await page.screenshot({
+        console.log('take screenshot')
+        const screenshotBuffer = await this.page.screenshot({
           fullPage: true,
           type: 'jpeg',
           quality: 80
         });
         screenshot = await this.compressScreenshot(screenshotBuffer);
       }
-      
+      console.log('getting html')
       // Obter o HTML da página
-      const html = await page.content();
+      const html = await this.page.content();
+
       const cleanedHtml = HTMLCleaner.clean(html, urlConfig.remove_elements, urlConfig.include_elements);
       const textContent = HTMLCleaner.extractText(cleanedHtml);
 
@@ -122,22 +118,26 @@ class PageMonitor {
       const screenshotKey = this.getStoragePath(urlConfig.name, 'screenshot');
 
       const storedContent = await this.storageAdapter.get(contentKey);
-      const storedScreenshot = urlConfig.enable_screenshot !== false ? 
-        await this.storageAdapter.get(screenshotKey) : null;
+      const storedScreenshot = urlConfig.enable_screenshot !== false ? await this.storageAdapter.get(screenshotKey) : null;
 
+      
       if (!storedContent) {
+        console.log('first content view')
         await this.storageAdapter.set(contentKey, textContent);
         if (screenshot) {
           await this.storageAdapter.set(screenshotKey, screenshot);
         }
-        await page.close();
+        //await this.page.close();
         return null;
       }
 
+      console.log('getting a diff')
       const changes = DiffGenerator.generateDiff(storedContent, textContent);
 
+      
       if (changes.length > 0) {
         // Gerar e salvar relatório HTML
+        console.log('generating html report')
         const report = await ReportGenerator.generateReport(
           urlConfig.url,
           changes,
@@ -146,10 +146,13 @@ class PageMonitor {
           storedScreenshot,
           screenshot
         );
+        console.log('saving html report')
         const reportPath = await this.saveReport(report);
 
+        
         // Enviar notificação com link para o relatório
         const formattedChanges = DiffGenerator.formatChangesForWebhook(changes);
+        console.log('send webhook')
         await this.notificationSender.send(
           urlConfig.url,
           {
@@ -159,6 +162,7 @@ class PageMonitor {
           urlConfig.webhook
         );
 
+        console.log('update content')
         // Atualizar conteúdo armazenado
         await this.storageAdapter.set(contentKey, textContent);
         if (screenshot) {
@@ -166,7 +170,9 @@ class PageMonitor {
         }
       }
 
-      await page.close();
+      //console.log('10')
+      //await this.page.close();
+      console.log('end this url')
       return changes;
     } catch (error) {
       console.error(`Erro ao verificar URL ${urlConfig.url}:`, error.message);
@@ -178,6 +184,10 @@ class PageMonitor {
     const activeUrls = this.configManager.getActiveUrls();
     const results = [];
 
+    await this.init();
+    this.page = await this.browser.newPage();
+    await this.page.setViewport({ width: 1920, height: 1080 });
+
     for (const urlConfig of activeUrls) {
       const changes = await this.checkUrl(urlConfig);
       if (changes && changes.length > 0) {
@@ -187,6 +197,8 @@ class PageMonitor {
         });
       }
     }
+
+    this.close()
 
     return results;
   }

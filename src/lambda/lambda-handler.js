@@ -10,7 +10,17 @@ module.exports.check = async (event) => {
   try {
 
     const browser = await puppeteer.launch({
-      args: chromium.args,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--single-process',
+        '--no-zygote',
+        '--no-first-run',
+        '--disable-dev-tools',
+        '--disable-features=site-per-process',
+      ],
       defaultViewport: chromium.defaultViewport,
       executablePath: await chromium.executablePath(),
       headless: chromium.headless,

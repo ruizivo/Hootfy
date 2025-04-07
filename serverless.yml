@@ -3,13 +3,19 @@ service: hootfy
 provider:
   name: aws
   runtime: nodejs18.x
-  memorySize: 512
+  memorySize: 1024
   timeout: 240
+  environment:
+    TZ: America/Sao_Paulo
   iamRoleStatements:
     - Effect: "Allow"
       Action:
         - "s3:PutObject"
-      Resource: "arn:aws:s3:::hivecloud-backup/*"
+        - "s3:ListBucket"
+        - "s3:GetObject"
+      Resource: 
+        - "arn:aws:s3:::hivecloud-backup"
+        - "arn:aws:s3:::hivecloud-backup/*"
 
 functions:
   check:
@@ -19,4 +25,4 @@ functions:
       - arn:aws:lambda:us-east-1:462728573761:layer:sharp:2
     events:
       - schedule:
-          rate: cron(0 8,14 * * ? *) # Executa às 08:00 e 14:00
+          rate: cron(0 11,17 * * ? *) # Executa às 08:00 e 14:00

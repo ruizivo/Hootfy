@@ -63,7 +63,7 @@ class S3Storage {
           Bucket: this.options.bucket_name,
           Key: key,
           Body: value,
-          ContentType: contentType
+          ContentType: `${contentType}; charset=utf-8`
         }
       });
       await upload.done();
