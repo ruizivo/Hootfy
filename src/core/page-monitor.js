@@ -88,18 +88,39 @@ class PageMonitor {
 
   async checkUrl(urlConfig) {
     try {
-      
-      console.log('go to url: ',urlConfig.url )
+      console.log('go to url: ', urlConfig.url);
+  
+      // Variável para armazenar a resposta principal
+      let mainResponse;
+  
+      this.page.on('response', response => {
+        const request = response.request();
+        if (!mainResponse && request.resourceType() === 'document') {
+          mainResponse = response;
+        }
+      });
+  
       // Navegar para a URL
       await this.page.goto(urlConfig.url, {
-        waitUntil: 'networkidle0',
+        waitUntil: 'domcontentloaded',
         timeout: 30000
       });
-      
+  
+      // Verifica se obteve resposta principal
+      if (mainResponse) {
+        const status = mainResponse.status();
+        if (status >= 400) {
+          console.error(`Erro HTTP ${status} ao acessar ${urlConfig.url}`);
+          return null; // ou lance um erro, ou salve esse status em algum log
+        }
+      } else {
+        console.error('Não foi possível capturar a resposta principal da página.');
+        return null;
+      }
+  
       let screenshot = null;
-      // Capturar screenshot apenas se estiver habilitado
       if (urlConfig.enable_screenshot !== false) {
-        console.log('take screenshot')
+        console.log('take screenshot');
         const screenshotBuffer = await this.page.screenshot({
           fullPage: true,
           type: 'jpeg',
@@ -107,37 +128,32 @@ class PageMonitor {
         });
         screenshot = await this.compressScreenshot(screenshotBuffer);
       }
-      console.log('getting html')
-      // Obter o HTML da página
+  
+      console.log('getting html');
       const html = await this.page.content();
-
       const cleanedHtml = HTMLCleaner.clean(html, urlConfig.remove_elements, urlConfig.include_elements);
       const textContent = HTMLCleaner.extractText(cleanedHtml);
-
+  
       const contentKey = this.getStoragePath(urlConfig.name, 'content');
       const screenshotKey = this.getStoragePath(urlConfig.name, 'screenshot');
-
+  
       const storedContent = await this.storageAdapter.get(contentKey);
       const storedScreenshot = urlConfig.enable_screenshot !== false ? await this.storageAdapter.get(screenshotKey) : null;
-
-      
+  
       if (!storedContent) {
-        console.log('first content view')
+        console.log('first content view');
         await this.storageAdapter.set(contentKey, textContent);
         if (screenshot) {
           await this.storageAdapter.set(screenshotKey, screenshot);
         }
-        //await this.page.close();
         return null;
       }
-
-      console.log('getting a diff')
+  
+      console.log('getting a diff');
       const changes = DiffGenerator.generateDiff(storedContent, textContent);
-
-      
+  
       if (changes.length > 0) {
-        // Gerar e salvar relatório HTML
-        console.log('generating html report')
+        console.log('generating html report');
         const report = await ReportGenerator.generateReport(
           urlConfig.url,
           changes,
@@ -146,13 +162,12 @@ class PageMonitor {
           storedScreenshot,
           screenshot
         );
-        console.log('saving html report')
+  
+        console.log('saving html report');
         const reportPath = await this.saveReport(report);
-
-        
-        // Enviar notificação com link para o relatório
+  
         const formattedChanges = DiffGenerator.formatChangesForWebhook(changes);
-        console.log('send webhook')
+        console.log('send webhook');
         await this.notificationSender.send(
           urlConfig.url,
           {
@@ -161,18 +176,15 @@ class PageMonitor {
           },
           urlConfig.webhook
         );
-
-        console.log('update content')
-        // Atualizar conteúdo armazenado
+  
+        console.log('update content');
         await this.storageAdapter.set(contentKey, textContent);
         if (screenshot) {
           await this.storageAdapter.set(screenshotKey, screenshot);
         }
       }
-
-      //console.log('10')
-      //await this.page.close();
-      console.log('end this url')
+  
+      console.log('end this url');
       return changes;
     } catch (error) {
       console.error(`Erro ao verificar URL ${urlConfig.url}:`, error.message);

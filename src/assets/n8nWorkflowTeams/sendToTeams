@@ -1,0 +1,93 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "133279a4-6c4d-4b4e-9e58-31121ab0b748",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        -40
+      ],
+      "id": "ebbf093e-8aa7-4b38-a844-96a3177bfea9",
+      "name": "Webhook",
+      "webhookId": "133279a4-6c4d-4b4e-9e58-31121ab0b748"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.microsoft.com/v1.0/teams/5aa7e6d9-c4db-47ad-8244-06323ee8adf4/channels/19%3A5ee578e535c34a48bc63fbd348f95a7e%40thread.tacv2/messages?groupId=3f6b7aa3-385d-4b39-a6e5-3f3045dfa251&tenantId=66b5ea26-146d-4b5d-97c0-b750658e484e",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftTeamsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"body\": {\n        \"contentType\": \"html\",\n        \"content\": \"{{ $json.html }}\"\n    },\n    \"reactions\": [],\n    \"messageHistory\": []\n}",
+        "options": {}
+      },
+      "id": "d8514f41-00bd-4751-b427-02999ba293e4",
+      "name": "Send Notificação Sefaz Chat Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        80,
+        -40
+      ],
+      "credentials": {
+        "microsoftTeamsOAuth2Api": {
+          "id": "609gxT1oXtsG5Qzk",
+          "name": "Hive Bot Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let body = $input.first().json.body;\n\nfunction clean(text) {\n  try {\n    return text\n      .replace(/\\\\n/g, ' ') // Caso venha com barras duplas\n      .replace(/\\n/g, ' ')\n      .replace(/\\r/g, ' ')\n      .replace(/\\s+/g, ' ')\n      .trim();\n  } catch (error) {\n    return '';\n  }\n}\n\nlet html = `\n<b>📌 Mudanças detectadas em:</b> <a href=\"${body.url}\" target=\"_blank\">${body.url}</a><br>\n<b>⏱ Timestamp:</b> ${new Date(body.timestamp).toLocaleString()}<br><br>\n<table border=\"0\" cellpadding=\"6\" cellspacing=\"0\" style=\"border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px; width: 100%;\">\n`;\n\nbody.changes.forEach((change) => {\n  const before = clean(change.before);\n  const after = clean(change.after);\n\n  html += `\n    <tr>\n      <td bgcolor=\"#ffe6e6\">- ${before}</td>\n    </tr>\n    <tr>\n      <td bgcolor=\"#e6ffe6\">+ ${after}</td>\n    </tr>\n    <tr><td><br></td></tr>\n  `;\n});\n\nhtml += `</table>`;\n\nhtml = html.replace(/\\n/g, '').replace(/\\s{2,}/g, ' ');\nhtml = html.replaceAll(\"\\\"\", \"\\'\");\n\nreturn [{ json: { html } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        -40
+      ],
+      "id": "7ae5c6f6-7719-4b91-92c7-fa3c860c2ba3",
+      "name": "Code",
+      "alwaysOutputData": false
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Notificação Sefaz Chat Message": {
+      "main": [
+        []
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Send Notificação Sefaz Chat Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "bf02d32b273ed13c94f59591b8f5759afbdffef2664e44888b0133add1156293"
+  }
+}

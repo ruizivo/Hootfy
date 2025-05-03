@@ -8,8 +8,8 @@ class CronJobManager {
   constructor(config = {}) {
     this.config = config;
     this.configManager = new ConfigManager();
-    this.storageAdapter = new StorageAdapter(process.env.DB_TYPE || 'file');
-    this.notificationSender = new NotificationSender(process.env.GLOBAL_WEBHOOK_URL);
+    this.storageAdapter = new StorageAdapter(this.configManager.getConfig());
+    this.notificationSender = new NotificationSender();
     this.pageMonitor = new PageMonitor(
       this.configManager, 
       this.notificationSender, 

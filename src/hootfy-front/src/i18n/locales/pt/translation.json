@@ -1,0 +1,28 @@
+{
+    "welcome": "Welcome to our application",
+    "pages": {
+        "dashboard": "Dashboard",
+        "sites": "Gerenciar Sites",
+        "monitoring": "Monitoramentos",
+        "reports": "Relatórios",
+        "alerts": "Alertas",
+        "notifications": "Notificações",
+        "settings":"Configurações"
+    },
+    "sidebar":{
+        "dashboard": "Dashboard",
+        "sites": "Sites",
+        "monitoring": "Monitoramentos",
+        "reports": "Relatórios",
+        "alerts": "Alertas",
+        "notifications": "Notificações",
+        "settings":"Configurações"
+    },
+    "language":{
+        "en": "Inglês",
+        "pt": "Português"
+    },
+    "buttons":{
+        "addurl": "adicionar"
+    }
+}

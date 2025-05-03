@@ -6,7 +6,7 @@
     "scripts": {
         "start": "node src/index.js",
         "cli": "node src/cli/menu.js",
-        "web": "node src/web/server.js",
+        "web": "nodemon src/web/server.js",
         "lambda": "node src/lambda/lambda-handler.js",
         "docker-build": "docker build -t Hootfy .",
         "docker-run": "docker-compose up",

@@ -17,6 +17,24 @@ class ConfigManager {
     }
   }
 
+  static createDefault(configPath) {
+    const config = new Config(configPath);
+    config.webhookGlobal = "https://hooks.slack.com/services/seu-webhook-global";
+    config.sites = [
+        new Site("https://example.com", {
+            webhook: "https://discord.com/api/webhooks/seu-webhook-específico",
+            removeElements: ["#banner", ".popup-ads", "footer", ".cookie-notice"],
+            textOnly: true
+        }),
+        new Site("https://news.ycombinator.com", {
+            removeElements: [".top-ad", "#cookie-consent", "nav", ".hnrss"],
+            textOnly: false
+        })
+    ];
+    config.save();
+    return config;
+  }
+
   getDefaultConfig() {
     return {
       webhook_global: null,

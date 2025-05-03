@@ -1,25 +1,51 @@
 const express = require('express');
+const path = require('path');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const ConfigManager = require('../core/config-manager');
 const PageMonitor = require('../core/page-monitor');
 const StorageAdapter = require('../storage/storage-adapter');
 const NotificationSender = require('../core/notification-sender');
+const puppeteer = require("puppeteer");
 
 class WebServer {
   constructor() {
     this.app = express();
     this.configManager = new ConfigManager();
-    this.storageAdapter = new StorageAdapter(process.env.DB_TYPE || 'file');
-    this.notificationSender = new NotificationSender(process.env.GLOBAL_WEBHOOK_URL);
-    this.pageMonitor = new PageMonitor(
-      this.configManager, 
-      this.notificationSender, 
-      this.storageAdapter
-    );
+    this.storageAdapter = new StorageAdapter(this.configManager.getConfig());
+    this.notificationSender = new NotificationSender(this.configManager.config.webhook_global);
+    
 
     this.setupMiddlewares();
     this.setupRoutes();
+  }
+
+   async init(){
+    console.log(`Iniciando chrome`);
+    const browser = await puppeteer.launch({
+      executablePath: '/usr/bin/chromium',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--single-process',
+        '--no-zygote',
+        '--no-first-run',
+        '--disable-dev-tools',
+        '--disable-features=site-per-process',
+      ],
+      headless: 'new',
+    });
+
+    this.pageMonitor = new PageMonitor(
+      this.configManager, 
+      this.notificationSender, 
+      this.storageAdapter,
+      browser
+    );
+    
+    console.log(`Iniciado chrome`);
   }
 
   setupMiddlewares() {
@@ -33,7 +59,6 @@ class WebServer {
 
     this.app.use(bodyParser.json());
     this.app.use(bodyParser.urlencoded({ extended: true }));
-    this.app.use(express.static('public'));
   }
 
   setupRoutes() {
@@ -100,13 +125,16 @@ class WebServer {
   }
 
   start(port = 3000) {
-    this.app.listen(port, () => {
+    this.app.listen(port, '0.0.0.0', () => {
       console.log(`Servidor web rodando na porta ${port}`);
     });
   }
 }
 
 const webServer = new WebServer();
+
+webServer.init();
 webServer.start();
+
 
 module.exports = WebServer;

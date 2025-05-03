@@ -1,0 +1,28 @@
+{
+    "welcome": "Welcome to our application",
+    "pages": {
+        "dashboard": "Dashboard",
+        "sites": "Sites Manager",
+        "monitoring": "Monitoring",
+        "reports": "Reports",
+        "alerts": "Alerts",
+        "notifications": "Notifications",
+        "settings": "Settings"
+    },
+    "sidebar":{
+        "dashboard": "Dashboard",
+        "sites": "Sites Manager",
+        "monitoring": "Monitoring",
+        "reports": "Reports",
+        "alerts": "Alerts",
+        "notifications": "Notifications",
+        "settings": "Settings"
+    },
+    "language":{
+        "en": "English",
+        "pt": "Portuguese"
+    },
+    "buttons":{
+        "addurl": "add url"
+    }
+}

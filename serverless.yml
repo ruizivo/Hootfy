@@ -16,7 +16,15 @@ provider:
       Resource: 
         - "arn:aws:s3:::hivecloud-backup"
         - "arn:aws:s3:::hivecloud-backup/*"
-
+  stackTags:
+    FINOPS-AMBIENTE: HML
+    FINOPS-AUTOSHUTDOWN: N/A
+    FINOPS-BUTORRE: TRANSPORTADOR
+    FINOPS-CLIENTE: COMPARTILHADO
+    FINOPS-EMPRESA: HIVECLOUD
+    FINOPS-JANELAOPERACIONAL: N/A
+    FINOPS-PRODUTO: 108-109
+        
 functions:
   check:
     handler: src/lambda/lambda-handler.check 
