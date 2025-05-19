@@ -16,13 +16,38 @@
         "reports": "Reports",
         "alerts": "Alerts",
         "notifications": "Notifications",
-        "settings": "Settings"
+        "settings": "Settings",
+        "exit":"Exit"
     },
     "language":{
         "en": "English",
         "pt": "Portuguese"
     },
     "buttons":{
-        "addurl": "add url"
+        "addurl": "+ Add URL",
+        "delete": "Delete",
+        "monitoring": "Perform monitoring",
+        "running": "Running...",
+        "save": "Save"
+    },
+    "labels":{
+        "verification_date": "Verification Date",
+        "active": "Active",
+        "inactive": "Inactive",
+        "yes": "Yes",
+        "no": "No",
+        "screenshot": "Screenshot",
+        "remove_elements": "Elements to Remove (separated by commas)",
+        "include_elements": "Elements to Include (separated by commas)",
+        "edit_modal_title": "Edit Url",
+        "add_modal_title": "Add Url",
+        "empty_url_list": "No URL registered yet.",
+        "storage_type": "Storage Type",
+        "schedule": "Schedule (cron)",
+        "remove_elements_global": "Elements to Remove (separated by commas)",
+        "file":"File",
+        "s3_region": "Region",
+        "s3_bucket_name": "Bucket",
+        "s3_folder": "Folder"
     }
 }

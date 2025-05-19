@@ -72,25 +72,41 @@ class FileStorage {
     }
   }
 
-  async getAllKeys() {
-    try {
-      // Lê todos os arquivos no diretório base
-      const files = fs.readdirSync(this.basePath);
-      
-      // Filtra apenas arquivos .json e converte os nomes de volta para URLs
-      return files
-        .filter(file => file.endsWith('.json'))
-        .map(file => {
-          // Remove a extensão .json e restaura o protocolo http/https
-          const key = file.replace('.json', '');
-          // Verifica se a URL começa com www. para adicionar o protocolo apropriado
-          return key.startsWith('www.') ? `https://${key}` : key;
-        });
-    } catch (error) {
-      console.error('Erro ao listar chaves:', error);
-      return [];
+  async getAllKeys(dir) {
+    const result = [];
+  
+    async function readDirRecursive(currentPath, folderName) {
+      const entries =  fs.readdirSync(currentPath, { withFileTypes: true });
+  
+      for (const entry of entries) {
+        const fullPath = path.join(currentPath, entry.name);
+  
+        if (entry.isDirectory()) {
+          await readDirRecursive(fullPath, entry.name);
+        } else if (entry.isFile()) {
+          const match = entry.name.match(/^(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3})Z\.html$/);
+  
+          if (match) {
+            const originalTimestamp = match[1]; // exemplo: 2025-05-07T14-34-58-718
+            const isoTimestamp = originalTimestamp.replace(/T(\d{2})-(\d{2})-(\d{2})-(\d{3})/, 'T$1:$2:$3.$4'); // -> 2025-05-07T14:34:58.718
+  
+            const formattedDate = new Date(isoTimestamp + 'Z'); // adiciona o Z para indicar UTC
+  
+            result.push({
+              url: folderName,
+              file: entry.name,
+              timestamp: formattedDate,
+              path: fullPath,
+            });
+          }
+        }
+      }
     }
+    const myPath = this.basePath + '/' + dir;
+    await readDirRecursive(myPath, path.basename(myPath));
+    return result;
   }
+
 }
 
 module.exports = FileStorage;

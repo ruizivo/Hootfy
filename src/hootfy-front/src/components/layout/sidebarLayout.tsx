@@ -1,4 +1,5 @@
-import { useState } from 'preact/hooks';
+import { lazy, Route, Router } from 'preact-iso';
+
 import Sidebar from '../sidebar/sidebar';
 import Header from '../header/header';
 import Dashboard from '../../pages/dashboard';
@@ -10,34 +11,34 @@ import NotificationsPage from '../../pages/notificationsPage';
 import SettingsPage from '../../pages/settingsPage';
 
 export default function SidebarLayout() {
-  const [collapsed, setCollapsed] = useState(false);
-  const [activeMenu, setActiveMenu] = useState('dashboard');
-  
-  const toggleSidebar = () => {
-    setCollapsed(!collapsed);
-  };
-  
+
+  const NotFound = lazy(() => import('../../pages/notFound'));
+
   return (
+
     <div className="flex h-screen bg-gray-100">
-      <Sidebar 
-        collapsed={collapsed} 
-        toggleSidebar={toggleSidebar} 
-        activeMenu={activeMenu}
-        setActiveMenu={setActiveMenu}
-      />
-      
+      <Sidebar />
       <div className="flex-1 overflow-auto">
-        <Header activeMenu={activeMenu} />
-        
+        <Header />
         <main className="p-6">
-          {activeMenu === 'dashboard' && <Dashboard />}
-          {activeMenu === 'sites' && <SitesPage />}
-          {activeMenu === 'monitoring' && <MonitoringPage />}
-          {activeMenu === 'reports' && <ReportsPage />}
-          {activeMenu === 'alerts' && <AlertsPage />}
-          {activeMenu === 'notifications' && <NotificationsPage />}
-          {activeMenu === 'settings' && <SettingsPage />}
+          <Router
+            onRouteChange={(url) => console.log('Route changed to', url)}
+            onLoadStart={(url) => console.log('Starting to load', url)}
+            onLoadEnd={(url) => console.log('Finished loading', url)}
+          >
+            <Route path="/" component={Dashboard} />
+            <Route path="/sites" component={SitesPage} />
+            <Route path="/dashboard" component={Dashboard} />
+            <Route path="/monitoring" component={MonitoringPage} />
+            <Route path="/reports" component={ReportsPage} />
+            <Route path="/alerts" component={AlertsPage} />
+            <Route path="/notifications" component={NotificationsPage} />
+            <Route path="/settings" component={SettingsPage} />
+            {/* @ts-ignore */}
+            <NotFound default/>
+          </Router>
         </main>
+
       </div>
     </div>
   );

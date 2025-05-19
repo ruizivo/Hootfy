@@ -16,13 +16,38 @@
         "reports": "Relatórios",
         "alerts": "Alertas",
         "notifications": "Notificações",
-        "settings":"Configurações"
+        "settings":"Configurações",
+        "exit":"Sair"
     },
     "language":{
         "en": "Inglês",
         "pt": "Português"
     },
     "buttons":{
-        "addurl": "adicionar"
+        "addurl": "+ Adicionar URL",
+        "delete": "Excluir",
+        "monitoring": "Executar monitoramento",
+        "running": "Executando...",
+        "save": "Salvar"
+    },
+    "labels":{
+        "verification_date": "Data de Verificação",
+        "active": "Ativo",
+        "inactive": "Inativo",
+        "yes": "Sim",
+        "no": "Não",
+        "screenshot": "Captura de tela",
+        "remove_elements": "Elementos para Remover (separados por vírgula)",
+        "include_elements": "Elementos para Incluir (separados por vírgula)",
+        "edit_modal_title": "Editar Url",
+        "add_modal_title": "Adicionar Url",
+        "empty_url_list": "Nenhuma URL cadastrada ainda.",
+        "storage_type": "Tipo de Armazenamento",
+        "schedule": "Agendamento (cron)",
+        "remove_elements_global": "Elements to Remove (separated by commas)",
+        "file":"Arquivo",
+        "s3_region": "Região",
+        "s3_bucket_name": "Nome do Bucket",
+        "s3_folder": "Pasta"
     }
 }

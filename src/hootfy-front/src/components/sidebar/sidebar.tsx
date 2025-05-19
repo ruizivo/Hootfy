@@ -1,5 +1,4 @@
-import MenuItem from './menuItem';
-import UserProfile from './userProfile';
+import Exit from './exit';
 import SidebarHeader from './sidebarHeader';
 import { 
   Home, 
@@ -10,15 +9,18 @@ import {
   List, 
   AlertTriangle 
 } from 'lucide-preact';
+import MenuItemLink from './menuItemLink';
+import { useState } from 'preact/hooks';
 
-interface SidebarProps {
-  collapsed: boolean;
-  toggleSidebar: () => void;
-  activeMenu: string;
-  setActiveMenu: (id: string) => void;
-}
 
-export default function Sidebar({ collapsed, toggleSidebar, activeMenu, setActiveMenu }:SidebarProps) {
+export default function Sidebar() {
+
+  const [collapsed, setCollapsed] = useState(false);
+
+  const toggleSidebar = () => {
+    setCollapsed(!collapsed);
+  };
+
   const menuItems = [
     { 
       icon: <Home size={20} />, 
@@ -46,11 +48,11 @@ export default function Sidebar({ collapsed, toggleSidebar, activeMenu, setActiv
       id: 'alerts',
       alertCount: 3 
     },
-    { 
-      icon: <Bell size={20} />, 
-      title: 'notifications', 
-      id: 'notifications' 
-    },
+    // { 
+    //   icon: <Bell size={20} />, 
+    //   title: 'notifications', 
+    //   id: 'notifications' 
+    // },
     { 
       icon: <Settings size={20} />, 
       title: 'settings', 
@@ -64,19 +66,15 @@ export default function Sidebar({ collapsed, toggleSidebar, activeMenu, setActiv
       
       <nav className="flex-1 pt-4">
         {menuItems.map(item => (
-          <MenuItem 
-            key={item.id}
+          <MenuItemLink
             icon={item.icon} 
-            title={item.title} 
+            title={item.title}
             collapsed={collapsed} 
-            active={activeMenu === item.id} 
-            onClick={() => setActiveMenu(item.id)} 
-            alertCount={item.alertCount} 
-          />
+            link={item.title} />
         ))}
       </nav>
       
-      <UserProfile collapsed={collapsed} />
+      <Exit collapsed={collapsed} />
     </div>
   );
 }

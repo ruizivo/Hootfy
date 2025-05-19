@@ -1,0 +1,38 @@
+{
+  "webhook_global": "http://192.168.8.20:5678/webhook/f382dfa4-dba8-4ef5-8461-dd54815c4979",
+  "remove_elements_global": [
+    "head",
+    "style",
+    "iframe",
+    "script",
+    "noscript",
+    "svg"
+  ],
+  "storage_type": "file",
+  "schedule": "0 11,17 * * ? *",
+  "storage_config": {
+    "file": {
+      "path": "./data"
+    },
+    "s3": {
+      "region": "us-east-1",
+      "bucket_name": "your-bucket-name",
+      "folder": "folder-name"
+    }
+  },
+  "urls": [
+    {
+      "url": "https://news.ycombinator.com",
+      "active": true,
+      "webhook": null,
+      "remove_elements": [
+        ".top-ad",
+        "#cookie-consent"
+      ],
+      "include_elements": [
+        "#hnmain > tbody > tr:nth-child(3) > td > table"
+      ],
+      "enable_screenshot": true
+    }
+  ]
+}

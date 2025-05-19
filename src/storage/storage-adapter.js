@@ -15,13 +15,7 @@ class StorageAdapter {
 
     switch (storageType) {
       case 'file':
-        return new FileStorage(storageConfig.path || './data');
-      // case 'sqlite_local':
-      //   return new SqliteStorage(storageConfig.path || './database.sqlite');
-      // case 'sqlite_external':
-      //   return new SqliteStorage(storageConfig.externalPath);
-      case 'postgres':
-        return new PostgresStorage(storageConfig);
+        return new FileStorage('./data');
       case 's3':
         return new S3Storage(storageConfig);
       default:
@@ -41,8 +35,8 @@ class StorageAdapter {
     return this.storage.delete(key);
   }
 
-  async getAllKeys() {
-    return this.storage.getAllKeys();
+  async getAllKeys(path) {
+    return this.storage.getAllKeys(path);
   }
 }
 

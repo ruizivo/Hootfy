@@ -56,22 +56,39 @@ class ConfigManager {
     }
   }
 
-  addUrl(urlConfig) {
-    this.config.urls.push(urlConfig);
+  addUrl(url) {
+    this.config.urls.push(url);
     this.saveConfig(this.config);
   }
 
-  removeUrl(url) {
-    this.config.urls = this.config.urls.filter(u => u.url !== url);
-    this.saveConfig(this.config);
-  }
-
-  updateUrl(url, newConfig) {
-    const index = this.config.urls.findIndex(u => u.url === url);
+  updateUrl(index, url) {
+    //const index = this.config.urls.findIndex(u => u.url === url);
     if (index !== -1) {
-      this.config.urls[index] = { ...this.config.urls[index], ...newConfig };
+      this.config.urls[index] = { ...this.config.urls[index], ...url };
       this.saveConfig(this.config);
     }
+  }
+
+  activeScheduler() {
+    this.config.schedule_active = true;
+    this.saveConfig(this.config);
+  }
+
+  isNeedToInitiateScheduler(){
+    if(this.config.schedule_active){
+      return true;
+    }
+    return false;
+  }
+
+  deactiveScheduler() {
+    this.config.schedule_active = false;
+    this.saveConfig(this.config);
+  }
+
+  removeUrlByIndex(index) {
+    this.config.urls.splice(index, 1);
+    this.saveConfig(this.config);
   }
 
   getActiveUrls() {

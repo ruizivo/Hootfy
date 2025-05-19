@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'preact/hooks';
-import MonitorTable from './monitorTable';
-import { fetchMonitorResults, runMonitor, MonitorResult} from '../../services/api';
+import { fetchMonitorResults, runMonitor, ReportResult} from '../../services/api';
+import { useTranslation } from 'react-i18next';
 
 export default function Monitor(){
-  const [monitorResults, setMonitorResults] = useState<MonitorResult[]>([]);
+  // @ts-ignore
+  const [monitorResults, setMonitorResults] = useState<ReportResult[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     loadMonitorHistory();
@@ -22,8 +24,9 @@ export default function Monitor(){
   const handleRunMonitor = async (): Promise<void> => {
     setLoading(true);
     try {
-      const results = await runMonitor();
-      setMonitorResults(results);
+      //const results = 
+      await runMonitor();
+      loadMonitorHistory();
     } catch (error) {
       console.error('Erro ao executar monitoramento:', error);
     } finally {
@@ -31,15 +34,16 @@ export default function Monitor(){
     }
   };
 
+
   return (
     <div class="home">
       <div class="actions">
         <button onClick={handleRunMonitor} disabled={loading}>
-          {loading ? 'Executando...' : 'Executar Monitoramento'}
+          {loading ? t('buttons.running') : t('buttons.monitoring') }
         </button>
       </div>
 
-      <MonitorTable results={monitorResults} />
+      
     </div>
   );
 };

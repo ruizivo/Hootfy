@@ -54,7 +54,7 @@ class PageMonitor {
 
   getStoragePath(key, type) {
     const config = this.configManager.getConfig();
-    const basePath = config.storage_config[config.storage_type].path;
+    const basePath = this.storageAdapter.storage.basePath
     const folder = type === 'screenshot' ? 'screenshots' : 
                   type === 'report' ? 'reports' : 'content';
     
@@ -68,7 +68,7 @@ class PageMonitor {
   async saveReport(report) {
     try {
       const config = this.configManager.getConfig();
-      const reportPath = this.getStoragePath(report.name, 'report');
+      const reportPath = this.getStoragePath(report.urlConfig.name + '/' + report.name, 'report');
 
       // Criar diretórios necessários se for storage local
       if (config.storage_type === 'file') {
@@ -155,7 +155,7 @@ class PageMonitor {
       if (changes.length > 0) {
         console.log('generating html report');
         const report = await ReportGenerator.generateReport(
-          urlConfig.url,
+          urlConfig,
           changes,
           storedContent,
           textContent,
@@ -197,6 +197,9 @@ class PageMonitor {
     const results = [];
 
     await this.init();
+    if (!this.browser || !this.browser.connected) {
+      this.browser = await puppeteer.launch();
+    }
     this.page = await this.browser.newPage();
     await this.page.setViewport({ width: 1920, height: 1080 });
 
@@ -210,7 +213,7 @@ class PageMonitor {
       }
     }
 
-    this.close()
+    this.page.close();
 
     return results;
   }

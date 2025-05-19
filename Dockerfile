@@ -77,6 +77,8 @@ COPY src/web ./src/web
 # Estágio final - imagem enxuta para produção
 FROM alpine:3.18
 
+ENV NODE_ENV=production
+
 # # Instalar Node.js e Nginx (versões mínimas necessárias)
 # RUN apk add --no-cache nodejs nginx && \
 #     rm -rf /var/cache/apk/*

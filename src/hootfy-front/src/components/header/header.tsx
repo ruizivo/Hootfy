@@ -1,18 +1,17 @@
 
+import { useLocation } from 'preact-iso';
 import { useTranslation } from 'react-i18next';
 
-interface HeaderProps {
-  activeMenu: string;
-}
-
-export default function Header({ activeMenu }:HeaderProps) {
+export default function Header() {
   const { t, i18n } = useTranslation();
-
+  const location = useLocation().url?.replace("/","");
+  
   return (
     <div class="flex bg-white shadow-sm p-4 justify-between">
+
       <header className="">
         <h1 className="text-xl font-semibold text-gray-800">
-          {t('pages.' + activeMenu)}
+          {t('pages.' + location)}
         </h1>
       </header>
 

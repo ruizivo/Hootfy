@@ -12,9 +12,9 @@ class ReportGenerator {
       .replace(/'/g, '&#039;');
   }
 
-  static async generateReport(url, changes, oldContent, newContent, oldScreenshot, newScreenshot) {
+  static async generateReport(urlConfig, changes, oldContent, newContent, oldScreenshot, newScreenshot) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const reportName = `changes-${timestamp}.html`;
+    const reportName = `${timestamp}.html`;
 
     // Criar um array com todas as linhas (antigas e novas) na ordem correta
     const oldLines = oldContent.split('\n');
@@ -100,12 +100,13 @@ class ReportGenerator {
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Relatório de Mudanças - ${url}</title>
+    <title>Relatório de Mudanças - ${urlConfig.url}</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     ${(oldScreenshot && newScreenshot) ? `
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@5.3.8/dist/photoswipe.css">
     <script src="https://cdn.jsdelivr.net/npm/photoswipe@5.3.8/dist/umd/photoswipe.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/photoswipe@5.3.8/dist/umd/photoswipe-lightbox.umd.min.js"></script>
+    <script src="https://unpkg.com/i18next@21.9.1/i18next.min.js"></script>
     ` : ''}
     <style>
         .line {
@@ -113,7 +114,7 @@ class ReportGenerator {
             align-items: start;
             padding: 2px 8px;
             font-family: monospace;
-            white-space: pre;
+            /* white-space: pre; */
         }
         .line-number {
             color: #666;
@@ -158,21 +159,109 @@ class ReportGenerator {
         .pswp__img--placeholder {
             display: none !important;
         }
+
+        .pswp__img--placeholder {
+            display: none !important;
+        }
+
+        .show {
+            display: block;
+            position: relative;
+        }
+        
+        .iframe {
+            display: none;
+        }
+
+        .languageSelect {
+           position: absolute; 
+           right: 0px;
+        }
         ` : ''}
     </style>
+    <script>
+
+    const resources = {
+      en: {
+        translation: {
+          title: "Detected Changes",
+          previous_screenshot: "Previous screenshot",
+          current_screenshot: "Current Screenshot",
+        }
+      },
+      pt: {
+        translation: {
+          title: "Mudanças Detectadas",
+          previous_screenshot: "Screenshot anterior",
+          current_screenshot: "Screenshot Atual",
+        }
+      }
+    };
+
+    const isInIframe = window.self !== window.top;
+
+    function showElement(id) {
+        var elem = document.getElementById(id);
+        elem.classList.remove("iframe"); 
+        elem.classList.add("show");
+    }
+
+    window.onload = function() {
+        if (!isInIframe) {
+            showElement("headerChanges");
+        }
+
+        // init i18next
+        i18next.init({
+            lng: "en",
+            resources
+        }, function(err, t) {
+            updateContent();
+        });
+    };
+
+    function updateContent() {
+        const keys = Object.keys(i18next.store.data[i18next.language].translation);
+        
+        keys.forEach(key => {
+            const el = document.getElementById(key);
+            if (el) {
+                el.innerText = i18next.t(key);
+            }
+        });
+    }
+
+    function changeLanguage(lng) {
+      i18next.changeLanguage(lng, updateContent);
+    }
+
+    window.addEventListener('message', (event) => {
+        const { lang } = event.data;
+        if (lang) {
+            changeLanguage(lang);
+        }
+    });
+    
+    </script>
 </head>
 <body class="bg-gray-100 p-6">
-    <div class="container mx-auto max-w-5xl">
+    <div class="containerPhoto">
         <header class="bg-white p-6 rounded-t shadow-md">
-            <h1 class="text-2xl font-bold">Mudanças Detectadas</h1>
-            <div class="mt-4 text-gray-600">
-                <p>URL: ${url}</p>
-                <p>Data: ${new Date().toLocaleString()}</p>
+            <div id="headerChanges" class="iframe">
+                <select class="languageSelect" id="language-picker-select" onChange="changeLanguage(this.options[this.selectedIndex].value)">
+                    <option lang="en" value="en" selected>English</option>
+                    <option lang="pt" value="pt">Português</option>
+                </select>
+                <h1 id="title" class="text-2xl font-bold"></h1>
+                <div class="mt-4 text-gray-600">
+                    <p>URL: ${urlConfig.url}</p>
+                    <p>Data: ${new Date().toLocaleString()}</p>
+                </div>
             </div>
             ${(oldScreenshot && newScreenshot) ? `
             <div class="mt-6 grid grid-cols-2 gap-4">
                 <div class="flex flex-col items-center">
-                    <h4 class="font-semibold mb-2 text-sm text-gray-600">Screenshot Anterior</h4>
+                    <h4 id="previous_screenshot" class="font-semibold mb-2 text-sm text-gray-600">Screenshot Anterior</h4>
                     <a href="data:image/png;base64,${oldScreenshot}" 
                        class="screenshot-container"
                        data-pswp-width="1920"
@@ -184,7 +273,7 @@ class ReportGenerator {
                     </a>
                 </div>
                 <div class="flex flex-col items-center">
-                    <h4 class="font-semibold mb-2 text-sm text-gray-600">Screenshot Atual</h4>
+                    <h4 id="current_screenshot" class="font-semibold mb-2 text-sm text-gray-600">Screenshot Atual</h4>
                     <a href="data:image/png;base64,${newScreenshot}" 
                        class="screenshot-container"
                        data-pswp-width="1920"
@@ -261,7 +350,7 @@ class ReportGenerator {
     <script>
         // Inicializar o PhotoSwipe
         const lightbox = new PhotoSwipeLightbox({
-            gallery: '.container',
+            gallery: '.containerPhoto',
             children: 'a.screenshot-container',
             pswpModule: PhotoSwipe,
             padding: { top: 20, bottom: 20, left: 20, right: 20 },
@@ -296,6 +385,7 @@ class ReportGenerator {
 
     return {
       name: reportName,
+      urlConfig: urlConfig,
       content: htmlContent
     };
   }

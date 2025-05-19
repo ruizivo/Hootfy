@@ -10,9 +10,9 @@ export default function SidebarHeader({ collapsed, toggleSidebar }:SidebarHeader
     <div className="p-4 flex items-center justify-between border-b border-gray-700">
       {!collapsed && <h1 className="text-xl font-bold">Hootfy</h1>}
 
-      <button onClick={toggleSidebar} className="p-1 rounded-md hover:bg-gray-700">
+      <span onClick={toggleSidebar} className="p-1 rounded-md hover:bg-gray-700 cursor-pointer ">
         {collapsed ? <Menu size={20} /> : <X size={20} />}
-      </button>
+      </span>
     </div>
   );
 }

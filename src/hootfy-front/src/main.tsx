@@ -1,19 +1,12 @@
-import { render } from 'preact'
 import './index.css'
-
-
-import SidebarLayout from './components/layout/sidebarLayout'
-
+import { hydrate } from 'preact-iso';
 import './i18n/i18n';
-// import App from './app';
+import App from './app';
+import { AuthProvider } from './components/auth/authProvider';
 
 
-
-//render( <App />, document.getElementById('app')!)
-
-
-render(
-    <>
-        <SidebarLayout />
-    </>, 
-document.body);
+hydrate(
+    <AuthProvider>
+        <App />
+    </AuthProvider>
+);
