@@ -12,24 +12,24 @@ export default function AlertsPage() {
     const s = io();
     setSocket(s);
 
-    s.on('progresso', (msg: string) => {
+    s.on('progress', (msg: string) => {
       setLogs((prev) => [...prev, msg]);
     });
 
-    s.on('finalizado', (msg: string) => {
+    s.on('completed', (msg: string) => {
       setLogs((prev) => [...prev, msg]);
     });
 
     return () => {
-      s.off('progresso');
-      s.off('finalizado');
+      s.off('progress');
+      s.off('completed');
       s.disconnect();
     };
   }, []);
 
   const iniciarVerificacao = () => {
     if (socket) {
-      socket.emit('start-verificacao');
+      socket.emit('start-verification');
       setLogs([]);
     } else {
       console.warn('Socket ainda não conectado');

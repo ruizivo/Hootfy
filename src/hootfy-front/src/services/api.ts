@@ -100,9 +100,11 @@ export const removeReport = (report: ReportResult) => fetchJson<void>(`${API_BAS
 });
 
 
-export const runMonitor = () => fetchJson<ReportResult[]>(`${API_BASE}/monitor`);
+export const runMonitor = () => fetchJson<ReportResult[]>(`${API_BASE}/monitor/run`, {
+  method: 'POST'
+});
 
-export const fetchMonitorResults = () => fetchJson<ReportResult[]>(`${API_BASE}/history`);
+export const fetchMonitorResults = () => fetchJson<ReportResult[]>(`${API_BASE}/report`);
 
 
 export interface ReportResult {

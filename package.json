@@ -12,7 +12,8 @@
         "docker-run": "docker-compose up",
         "test": "jest",
         "dev": "nodemon src/index.js",
-        "deploy-serverless": "serverless deploy --stage dev -r us-east-1 --aws-profile serverless"
+        "deploy-serverless": "serverless deploy --stage dev -r us-east-1 --aws-profile serverless",
+        "vite": "cd src/hootfy-front && npm run dev"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.779.0",

@@ -11,6 +11,12 @@ const CronJobManager = require('../utils/cron-job-manager');
 const http = require ('http');
 const Server = require ('socket.io');
 
+const ConfigRoutes = require('./routes/config-routes');
+const UrlRoutes = require('./routes/url-routes');
+const MonitorRoutes = require('./routes/monitor-routes');
+const CronRoutes = require('./routes/cron-routes');
+const ReportRoutes = require('./routes/report-routes');
+
 class WebServer {
   constructor() {
     this.app = express();
@@ -21,11 +27,10 @@ class WebServer {
     this.server = null;
 
     this.setupMiddlewares();
-    this.setupRoutes();
   }
 
    async init(){
-    console.log(`Iniciando chrome`);
+    console.log(`Chrome initiating...`);
     let browser = null;
     if(process.env.NODE_ENV == 'production') {
       browser = await puppeteer.launch({
@@ -52,34 +57,37 @@ class WebServer {
       browser
     );
     
-    console.log(`Iniciado chrome`);
+    console.log(`Chrome started`);
 
     this.server = http.createServer(this.app);
     this.io =  Server(this.server, {
       cors: {
-        origin: '*', // ajuste se necessário
+        origin: '*', // adjust if necessary
       },
     });
 
     this.io.on('connection', (socket) => {
-      console.log('Cliente conectado:', socket.id);
+      console.log('Client connected:', socket.id);
 
-      socket.on('start-verificacao', async () => {
-        const urls = ['https://exemplo1.com', 'https://exemplo2.com'];
+      socket.on('start-verification', async () => {
+        const urls = ['https://example1.com', 'https://example2.com'];
 
         for (const url of urls) {
-          // Simula etapas
-          socket.emit('progresso', `Verificando: ${url}`);
-          await new Promise((r) => setTimeout(r, 1000)); // simula delay
-          socket.emit('progresso', `OK: ${url}`);
+          // Simulate steps
+          socket.emit('progress', `Checking: ${url}`);
+          await new Promise((r) => setTimeout(r, 1000)); // simulate delay
+          socket.emit('progress', `OK: ${url}`);
         }
         socket.on('disconnect', () => {
-          console.log('Cliente desconectado:', socket.id);
+          console.log('Client disconnected:', socket.id);
         });
-        socket.emit('finalizado', 'Verificação concluída.');
+        socket.emit('completed', 'Verification completed.');
       });
     }); 
-    console.log(`Iniciado websocket`);
+    console.log(`WebSocket started`);
+
+
+    this.setupRoutes();
   }
 
   setupMiddlewares() {
@@ -103,120 +111,17 @@ class WebServer {
   }
 
   setupRoutes() {
-    this.app.get('/api/config', this.getConfig.bind(this));
-    this.app.post('/api/config', this.updateConfig.bind(this));
-    this.app.post('/api/url', this.addUrl.bind(this));
-    this.app.put('/api/url/:id', this.editUrl.bind(this));
-    this.app.delete('/api/url/:id', this.removeUrl.bind(this));
-    this.app.get('/api/monitor', this.runMonitor.bind(this));
-    this.app.get('/api/history', this.getMonitorHistory.bind(this));
+    const configRoutes = new ConfigRoutes(this.configManager);
+    const urlRoutes = new UrlRoutes(this.configManager);
+    const monitorRoutes = new MonitorRoutes(this.pageMonitor);
+    const cronRoutes = new CronRoutes(this.configManager, this.pageMonitor);
+    const reportRoutes = new ReportRoutes(this.storageAdapter);
 
-
-    this.app.post('/api/cron/start', this.cronStart.bind(this));
-    this.app.post('/api/cron/stop', this.cronStop.bind(this));
-    this.app.post('/api/cron/status', this.cronStatus.bind(this));
-
-
-    this.app.delete('/api/report/', this.removeReport.bind(this));
-  }
-
-  async cronStart(req, res) {
-    try {
-      this.configManager.activeScheduler();
-      CronJobManager.start(this.pageMonitor)
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  async cronStop(req, res) {
-    try {
-      this.configManager.deactiveScheduler();
-      CronJobManager.stop()
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  async cronStatus(req, res) {
-    try {
-      res.json(CronJobManager.isRunning());
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  async getConfig(req, res) {
-    try {
-      res.json(this.configManager.config);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  async updateConfig(req, res) {
-    try { 
-      this.configManager.saveConfig(req.body); 
-      res.json({ message: 'Configuração atualizada com sucesso' });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  async addUrl(req, res) {
-    try {
-      this.configManager.addUrl(req.body);
-      res.json({ message: 'URL adicionada com sucesso' });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  async editUrl(req, res) {
-    try {
-      this.configManager.updateUrl(req.params.id, req.body);
-      res.json({ message: 'URL adicionada com sucesso' });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  async removeUrl(req, res) {
-    try {
-      this.configManager.removeUrlByIndex(req.params.id);
-      res.json({ message: 'URL removida com sucesso' });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  async removeReport(req, res) {
-    try {
-      this.storageAdapter.delete(req.body.path);
-      res.json({ message: 'Report removido com sucesso' });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  async runMonitor(req, res) {
-    try {
-      const results = await this.pageMonitor.checkAllUrls();
-      res.json(results);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  async getMonitorHistory(req, res) {
-    try {
-      //const folder= path.join('./data', 'reports');
-      // Lógica para buscar histórico de monitoramento
-      const history = await this.storageAdapter.getAllKeys('reports') || [];
-      res.json(history);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
+    this.app.use('/api/config', configRoutes.router);
+    this.app.use('/api/url', urlRoutes.router);
+    this.app.use('/api/monitor', monitorRoutes.router);
+    this.app.use('/api/cron', cronRoutes.router);
+    this.app.use('/api/report', reportRoutes.router);
   }
 
   start(port = 3000) {
